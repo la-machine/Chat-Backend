@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from extensions import db, jwt
 from Controller.authentication import auth_bp
 from Controller.users import user_bp
+# from Controller.enterprise import ent_bp
 from Model.user import User
 from flask_cors import CORS
 
@@ -28,13 +29,14 @@ def create_app():
     # Register blueprints
     app.register_blueprint(auth_bp,url_prefix = '/api/auth')
     app.register_blueprint(user_bp, url_prefix = '/api/user')
+    # app.register_blueprint(ent_bp, url_prefix = '/api/enterprise')
     app.register_blueprint(chat_bp, url_prefix = '/api')
 
-    # @jwt.additional_claims_loader
-    # def add_extra_claims(identity):
-    #     user = User.get_user_by_email(email=identity)
-    #     if user is not None:
-    #         return {"role" : user.}
+    @jwt.additional_claims_loader
+    def add_extra_claims(identity):
+        user = User.get_user_by_email(email=identity)
+        if user is not None:
+            return {"role" : user.role}
 
     @jwt.expired_token_loader
     def expired_token_collback(jwt_header, jwt_data):
@@ -47,5 +49,6 @@ def create_app():
     @jwt.unauthorized_loader
     def missing_token_collback(error):
         return jsonify({"message":"Request does not contain a valid token", "error":"authorization_header"}), 401
+
 
     return app

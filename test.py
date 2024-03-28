@@ -4,6 +4,7 @@ import os
 import panel as pn
 import openai
 from dotenv import load_dotenv
+from Model.enterprise import Enterprise, Supplier, Employee
 
 load_dotenv()
 
@@ -11,13 +12,31 @@ pn.extension()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 panels = []
 
+isSupplier = False
+
 F_messages = [{"role": "system", "content": """You are ChatBot, an automated Serviced to collect informations for an enterprise
 You first greet the customer, then collect the service he wish to do,\ and then ask the detail information relative to that service. \
  You will present all the information the user is to enter and then progessively ask him those information one after the other 
   (eg if he is to enter the fuulname, email, contact, etc you first ask him his fullname, after submiting his full name you then ask the others) \
  You wait to collect the entire informations, then summerise it and check for a final confirmation \
- and the summarised information shouild not be numerated nor have hiphen \
+ and the summarised information for both supplier and employee shouild not be numerated nor have hiphen \
  time if the customer want to add anything else. \
+ This are the details you are to collect to register a supplier: \
+ Supplier_Name \
+ Contact Name \
+ Email \
+ Phone Number \
+ Address \
+ Products_Services_Provided \
+ And these are that of an employee: \
+ Name
+ Email
+ Phone Number
+ Address
+ Department
+ Position
+ Salary
+ Hire Date
  Each time you present the summary always use the phrase (Here is a summary of the details) \
  And when presenting the summary details the attribut name should be seperated with _ not space (e.g Supplier Name: FLYT should be Supplier_Name: FLYT \
  Finally you collect the payment .\
@@ -44,15 +63,43 @@ def get_completion_from_messages(messages):
 @chat_bp.post('/chat')
 def end_point():
     data = request.get_json()
+    print(data.get('message'))
     F_messages.append({'role': 'user', 'content': f"{data.get('message')}"})
     response = get_completion_from_messages(F_messages)
     F_messages.append({'role': 'assistant', 'content': f"{response}"})
     if "Here is a summary of the details" in response:
         summary_text = response.split("Here is a summary of the details:")[1].strip()
-        print(summary_text)
-        response = convertToJson(summary_text)
-        print(response.get('Addresse'))
-        return response
+        print(response)
+        response_json = convertToJson(summary_text)
+        data = json.loads(response_json)
+
+        if 'Supplier_Name' in response:
+            new_supplier = Supplier(
+                name=data.get('Supplier_Name'),
+                contact_name=data.get('Contact_Name'),
+                email=data.get('Email'),
+                phone_number=data.get('Phone_Number'),
+                address=data.get('Address'),
+                products_services_provided=data.get('Products_Services_Provided'),
+                payment_terms='',
+                payment_method='',
+                enterprise_id = 1
+            )
+            Supplier.save(new_supplier)
+        else:
+            employee = Employee(name=data.get('Name'),
+                                email=data.get('Email'),
+                                phone_number=data.get('Phone Number'),
+                                address=data.get('Address'),
+                                department=data.get('Department'),
+                                position=data.get('Position'),
+                                salary=data.get('Salary'),
+                                hire_date=data.get('Hire Date'),
+                                # termination_date='',
+                                enterprise_id=1)
+                                # termination_date=data.get('Termination Date'))
+            Employee.save(employee)
+
     return jsonify({'message': f"{response}"}) , 201
 # def collect_messages(_):
 #     prompt = inp.value_input

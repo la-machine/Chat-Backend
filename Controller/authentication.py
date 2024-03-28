@@ -45,6 +45,11 @@ def register_manager():
 
 @auth_bp.post('/register/employee')
 def register_employee():
+    claims = get_jwt()
+
+    if claims.get('role') is not 'Admin' or claims.get('role') is not 'Manager':
+        return jsonify({"Message":"You are not authorize to access this"}) , 401
+
     data = request.get_json()
     user = User.get_user_by_email(email = data.get('email'))
 
