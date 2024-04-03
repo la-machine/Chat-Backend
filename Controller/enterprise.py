@@ -6,15 +6,14 @@ from sqlalchemy.exc import OperationalError
 import tables
 
 
-# ent_bp = Blueprint('ent', __name__)
-
+ent_bp = Blueprint('ent', __name__)
 def initialize_tables(database_name):
     with db.engine.connect() as connection:
         connection.execute(f"USE {database_name}")
         tables.supplier_schema.create(bind=db.engine, checkfirst=True)
         tables.employee_schema.create(bind=db.engine, checkfirst=True)
 
-# @ent_bp.post('/register')
+@ent_bp.post('/register')
 def register_enterprise():
     data = request.get_json()
     enterprise = Enterprise.get_enterprise_by_name(name=data.get('name'))
@@ -49,16 +48,18 @@ def register_enterprise():
         new_user = User(
             username=data.get('username'),
             email=data.get('email'),
-            enterprise=new_enterprise,
             role=UserRole.ADMIN
         )
+        user = new_user
+        user.set_password(password=data.get('password'))
+        user.ent
+        user.save()
+        # user = new_user
+    new_enterprise.set_manager(manager_id=user.id)
 
-        new_user.set_password(password=data.get('password'))
-        new_user.save()
+    new_enterprise.save()
+    # user.save()
 
-    user.set_enterprise(new_enterprise)
-    user.save()
-
-    return jsonify({"Message": "User created!"}) , 201
+    return jsonify({"Message": "Enterprise created!"}) , 201
 
 # def addEmployee (employee):

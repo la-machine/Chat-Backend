@@ -85,7 +85,10 @@ def user_login():
             "token" : {
                 "access":access_token,
                 "refresh":refresh_token
-            }
+            },
+            "role": user.role.value,
+            "name": user.username,
+            "email": user.email
         }) , 200
     return jsonify({"error":"invalid credentials"}), 400
 

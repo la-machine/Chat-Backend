@@ -20,6 +20,7 @@ class User(db.Model):
     enterprise_id = db.Column(db.Integer, db.ForeignKey('enterprises.id'), nullable=True)
 
 
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -28,15 +29,15 @@ class User(db.Model):
 
         # Getter method for enterprise
         @property
-        def get_enterprise(self):
+        def enterprise(self):
             return self._enterprise
 
         # Setter method for enterprise
         @enterprise.setter
-        def set_enterprise(self, value):
+        def enterprise(self, value):
             if not isinstance(value, Enterprise):
                 raise ValueError("Enterprise must be an instance of Enterprise class")
-            self._enterprise = value
+            self.enterprise_id = value
 
     def __repr__(self):
         return f'<User {self.email}>'
@@ -44,6 +45,15 @@ class User(db.Model):
     @classmethod
     def get_user_by_email(cls,email):
         return cls.query.filter_by(email = email).first()
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'role': self.role.value,  # Convert UserRole enum to string
+            'enterprise_id': self.enterprise_id
+        }
 
     def save(self):
         db.session.add(self)
