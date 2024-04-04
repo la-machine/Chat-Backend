@@ -1,5 +1,6 @@
 import json
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt
 import os
 import panel as pn
 import openai
@@ -61,7 +62,12 @@ def get_completion_from_messages(messages):
     return response.choices[0].message.content
 
 @chat_bp.post('/chat')
+@jwt_required()
 def end_point():
+    claims = get_jwt()
+
+    if claims.get('role') != 'admin' or claims.get('role') != 'super_admin':
+        return jsonify({"Message": "You are not authorize to access this"}), 401
     data = request.get_json()
     print(data.get('message'))
     F_messages.append({'role': 'user', 'content': f"{data.get('message')}"})

@@ -28,16 +28,19 @@ class User(db.Model):
         return check_password_hash(self.password_hash, password)
 
         # Getter method for enterprise
-        @property
-        def enterprise(self):
-            return self._enterprise
+    @property
+    def enterprise(self):
+        return self.enterprise_id
 
         # Setter method for enterprise
-        @enterprise.setter
-        def enterprise(self, value):
-            if not isinstance(value, Enterprise):
-                raise ValueError("Enterprise must be an instance of Enterprise class")
-            self.enterprise_id = value
+        # @enterprise.setter
+        # def enterprise(self, value):
+        #     if not isinstance(value, Enterprise):
+        #         raise ValueError("Enterprise must be an instance of Enterprise class")
+        #     self.enterprise_id = value
+    def set_enterprise(self, enterprise):
+        self.enterprise_id = enterprise
+        db.session.commit()
 
     def __repr__(self):
         return f'<User {self.email}>'

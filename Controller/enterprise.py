@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt
 from Model.user import User, UserRole
 from extensions import db
 from Model.enterprise import Enterprise
@@ -14,7 +15,12 @@ def initialize_tables(database_name):
         tables.employee_schema.create(bind=db.engine, checkfirst=True)
 
 @ent_bp.post('/register')
+@jwt_required()
 def register_enterprise():
+    claims = get_jwt()
+
+    if claims.get('role') != 'super_admin':
+        return jsonify({"Message": "You are not authorize to access this"}), 401
     data = request.get_json()
     enterprise = Enterprise.get_enterprise_by_name(name=data.get('name'))
     if enterprise is not None:
@@ -52,7 +58,7 @@ def register_enterprise():
         )
         user = new_user
         user.set_password(password=data.get('password'))
-        user.ent
+        user.set_enterprise(new_enterprise.id)
         user.save()
         # user = new_user
     new_enterprise.set_manager(manager_id=user.id)
