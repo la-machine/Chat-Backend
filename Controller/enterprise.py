@@ -51,16 +51,11 @@ def register_enterprise():
 
     user = User.get_user_by_email(email = data.get('email'))
     if user is None:
-        new_user = User(
-            username=data.get('username'),
-            email=data.get('email'),
-            role=UserRole.ADMIN
-        )
-        user = new_user
-        user.set_password(password=data.get('password'))
-        user.set_enterprise(new_enterprise.id)
-        user.save()
+        return jsonify({"error":"No user with this email Please make sure this user enail is created"})
+
         # user = new_user
+    user.set_enterprise(new_enterprise.id)
+    user.save()
     new_enterprise.set_manager(manager_id=user.id)
 
     new_enterprise.save()
