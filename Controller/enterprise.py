@@ -1,18 +1,20 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt
 from Model.user import User, UserRole
-from extensions import db
+# from extensions import db
+from sqlalchemy_utils import database_exists, create_database
 from Model.enterprise import Enterprise
+from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 import tables
 
 
 ent_bp = Blueprint('ent', __name__)
-def initialize_tables(database_name):
-    with db.engine.connect() as connection:
-        connection.execute(f"USE {database_name}")
-        tables.supplier_schema.create(bind=db.engine, checkfirst=True)
-        tables.employee_schema.create(bind=db.engine, checkfirst=True)
+# def initialize_tables(database_name):
+#     with db.engine.connect() as connection:
+#         connection.execute(f"USE {database_name}")
+#         tables.supplier_schema.create(bind=db.engine, checkfirst=True)
+#         tables.employee_schema.create(bind=db.engine, checkfirst=True)
 
 @ent_bp.post('/register')
 @jwt_required()
@@ -33,21 +35,18 @@ def register_enterprise():
         database_password = data.get('db_password')
     )
 
+    try:
 
-    # try:
-    #
-    #     # Create the database if it does not exist
-    #     with db.engine.connect() as connection:
-    #         connection.execute(f"CREATE DATABASE IF NOT EXISTS {data.get('db_name')}")
-    #
-    #     # Initialize the tables for the new enterprise
-    #     initialize_tables(data.get('db_name'))
-    #
-    #     # Save the enterprise to get its ID
-    #     new_enterprise.save()
-    #
-    # except OperationalError as e:
-    #     return jsonify({"error": f"Failed to create or initialize database: {str(e)}"}), 500
+        engine = create_engine(f"postgresql+psycopg2://{data.get('db_user')}:{data.get('db_password')}@localhost:5432/{data.get('db_name')}")
+        if not database_exists(engine.url):
+            create_database(engine.url)
+        tables.supplier_schema.create(bind=engine, checkfirst=True)
+        tables.employee_schema.create(bind=engine, checkfirst=True)
+
+        new_enterprise.save()
+
+    except OperationalError as e:
+        return jsonify({"error": f"Failed to create or initialize database: {str(e)}"}), 500
 
     user = User.get_user_by_email(email = data.get('email'))
     if user is None:
